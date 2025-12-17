@@ -7,6 +7,13 @@ import { UIOverlay } from './components/UIOverlay';
 import { GestureController } from './components/GestureController';
 import { TreeMode } from './types';
 
+// Preload bundled photos from the local photos folder
+const localPhotoUrls = Object.entries(
+  import.meta.glob('./photos/*.{jpg,jpeg,png}', { eager: true, import: 'default' })
+)
+  .sort((a, b) => a[0].localeCompare(b[0], undefined, { numeric: true }))
+  .map(([, url]) => url as string);
+
 // Simple Error Boundary to catch 3D resource loading errors (like textures)
 class ErrorBoundary extends React.Component<{children: React.ReactNode}, {hasError: boolean}> {
   constructor(props: any) {
@@ -96,6 +103,13 @@ export default function App() {
 
     loadSharedPhotos();
   }, []);
+
+  // Auto-load local bundled photos when not viewing a shared tree
+  useEffect(() => {
+    if (!isSharedView && uploadedPhotos.length === 0 && localPhotoUrls.length > 0) {
+      setUploadedPhotos(localPhotoUrls);
+    }
+  }, [isSharedView, uploadedPhotos.length]);
 
   const toggleMode = () => {
     setMode((prev) => (prev === TreeMode.FORMED ? TreeMode.CHAOS : TreeMode.FORMED));
@@ -191,3 +205,4 @@ export default function App() {
     </div>
   );
 }
+
